@@ -1,0 +1,5 @@
+name: mineweb
+description: Minecraft plugin to fetch current server information via JSON
+main: de.myreality.mineweb.MineWeb
+version: 1.0
+author: Miguel Gonzalez
