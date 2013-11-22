@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>de.myreality.mineweb</groupId>
 	<artifactId>mineweb</artifactId>
-	<version>0.1</version>
+	<version>1.0</version>
 	<name>mineweb</name>
 	<description>minecraft plugin to provide server information</description>
 
