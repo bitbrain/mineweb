@@ -13,54 +13,95 @@
  */
 package de.myreality.mineweb;
 
-import org.bukkit.plugin.java.JavaPlugin;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
- * Main plugin class which is loaded by minecraft. Handles all
- * required submodules.
+ * Concurrent implementation of {@see WebServer}
  * 
  * @author Miguel Gonzalez <miguel-gonzalez@gmx.de>
  * @since 1.0
- * @version 1.0
+ * @version 1.0 
  */
-public class MineWeb extends JavaPlugin {
+public class ConcurrentWebServer implements WebServer {
 
 	// ===========================================================
 	// Constants
 	// ===========================================================
-	
-	public static final int DEFAULT_PORT = 25566;
 
 	// ===========================================================
 	// Fields
 	// ===========================================================
 	
-	private WebServer server;
+	private MineWeb plugin;
+	
+	private int port;
+	
+	private ServerSocket socket;
+	
+	private boolean running;
+	
+	private ExecutorService service;
 
 	// ===========================================================
 	// Constructors
 	// ===========================================================
 	
-	public MineWeb() {
-		this.server = new ConcurrentWebServer(this, DEFAULT_PORT);
+	public ConcurrentWebServer(MineWeb plugin, int port) {
+		this.plugin = plugin;
+		this.port = port;
+		service = Executors.newFixedThreadPool(5);
 	}
-
 
 	// ===========================================================
 	// Methods from superclass/interface
 	// ===========================================================
-	
 
 	@Override
-	public void onDisable() {
-		super.onDisable();
-		server.stop();
+	public void setPort(int port) {
+		this.port = port;
 	}
 
 	@Override
-	public void onEnable() {
-		super.onEnable();
-		server.start();
+	public void start() {
+		if (!isRunning()) {
+			try {
+				socket = new ServerSocket(port);				
+				socket.setReuseAddress(true);
+				running = true;
+				
+				while (running) {
+					try {
+						Socket client = socket.accept();
+						ClientHandler handler = new ClientHandler(client, plugin);
+						service.submit(handler);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	@Override
+	public void stop() {
+		try {
+			running = false;
+			service.shutdownNow();
+			socket.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	@Override
+	public boolean isRunning() {
+		return running;
 	}
 
 	// ===========================================================
