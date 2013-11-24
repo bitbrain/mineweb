@@ -16,7 +16,10 @@ package de.myreality.mineweb;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.bukkit.OfflinePlayer;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 
@@ -86,7 +89,8 @@ public class JsonResponse {
 		
 		StringBuilder json = new StringBuilder();
 		Server server = plugin.getServer();
-		Player[] online = server.getOnlinePlayers();
+		Player[] online = server.getOnlinePlayers();		
+		
 		int current = online.length;
 		int max = server.getMaxPlayers();
 		
@@ -95,26 +99,49 @@ public class JsonResponse {
 		json.append(jsonfy(CURRENT_PLAYER_COUNT, current + "")).append(",");
 		json.append(jsonfy(MAX_PLAYER_COUNT, max + "")).append(",");
 		json.append(jsonfy(BUKKIT_VERSION, server.getBukkitVersion())).append(",");	
-		json.append(jsonfy(PLAYERS, createPlayersJson(online)));	
+		json.append(jsonfy(PLAYERS, createPlayersJson(getPlayers(server))));	
 		json.append("}\n");
 		
 		return json.toString();			
 	}
 	
-	private String createPlayersJson(Player[] players) {
+	private String createPlayersJson(List<OfflinePlayer> players) {
 		
 		StringBuilder json = new StringBuilder();
 		
 		json.append("[");
 		
-		for (Player player : players) {
-			json.append(createPlayerJson(player)).append(",");
+		for (OfflinePlayer player : players) {
+			if (player instanceof Player) {
+				json.append(createPlayerJson((Player)player)).append(",");
+			} else {
+				json.append(createPlayerJson(player)).append(",");
+			}
 		}
 		
 		// Remove the last comma
 		json.deleteCharAt(json.lastIndexOf(","));
 		
 		json.append("]");
+		
+		return json.toString();
+	}
+	
+	private String createPlayerJson(OfflinePlayer player) {
+		StringBuilder json = new StringBuilder();
+		
+		json.append("{");
+		json.append(jsonfy("name", player.getName())).append(",");
+		json.append(jsonfy("dead", "")).append(",");
+		json.append(jsonfy("xp", "")).append(",");
+		json.append(jsonfy("xpMax", "")).append(",");
+		json.append(jsonfy("health", "")).append(",");
+		json.append(jsonfy("healthMax", "")).append(",");
+		json.append(jsonfy("level", "")).append(",");
+		json.append(jsonfy("online", player.isOnline() + "")).append(",");
+		json.append(jsonfy("op", player.isOp() + "")).append(",");
+		json.append(jsonfy("sleeping", ""));
+		json.append("}");
 		
 		return json.toString();
 	}
@@ -133,11 +160,30 @@ public class JsonResponse {
 		json.append(jsonfy("level", player.getLevel() + "")).append(",");
 		json.append(jsonfy("online", player.isOnline() + "")).append(",");
 		json.append(jsonfy("op", player.isOp() + "")).append(",");
-		json.append(jsonfy("s;eeping", player.isSleeping() + ""));
+		json.append(jsonfy("sleeping", player.isSleeping() + ""));
 		json.append("}");
 		
 		return json.toString();
 	}
+	
+	private List<OfflinePlayer> getPlayers(Server server) {
+		Player[] online = server.getOnlinePlayers();
+		OfflinePlayer[] offline = server.getOfflinePlayers();
+		
+		List<OfflinePlayer> players = new ArrayList<OfflinePlayer>();
+		
+		for (Player p : online) {
+			players.add(p);
+		}
+		
+		for (OfflinePlayer p : offline) {
+			players.add(p);
+		}
+		
+		return players;
+	}
+	
+	
 	// ===========================================================
 	// Inner classes
 	// ===========================================================
