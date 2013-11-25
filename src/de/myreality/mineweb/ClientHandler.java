@@ -17,6 +17,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Handles a single client request
@@ -62,16 +64,24 @@ public class ClientHandler implements Runnable {
 	 */
 	@Override
 	public void run() {
+		
+		Logger l = plugin.getLogger();
+		
 		try {
 			BufferedReader reader = new BufferedReader(
 					new InputStreamReader(client.getInputStream()));
+			String request = reader.readLine();
+			l.log(Level.INFO, "Handle client request: '" + request + "'");
 			response.handle(client, reader.readLine(), plugin);
+			l.log(Level.INFO, "Success!");
 		} catch (IOException ex) {			
-			ex.printStackTrace();
+			l.log(Level.INFO, ex.getMessage());
 		} finally {
 			try {
 				client.close();
+				l.log(Level.INFO, "Closed connection to " + client.getInetAddress());
 			} catch (IOException e) {
+				l.log(Level.INFO, e.getMessage());
 				e.printStackTrace();
 			}
 		}

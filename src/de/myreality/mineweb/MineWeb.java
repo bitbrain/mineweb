@@ -13,6 +13,10 @@
  */
 package de.myreality.mineweb;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
@@ -36,6 +40,10 @@ public class MineWeb extends JavaPlugin {
 	// ===========================================================
 	
 	private WebServer server;
+	
+	private ExecutorService service;
+	
+	private Future<?> future;
 
 	// ===========================================================
 	// Constructors
@@ -43,6 +51,7 @@ public class MineWeb extends JavaPlugin {
 	
 	public MineWeb() {
 		this.server = new ConcurrentWebServer(this, DEFAULT_PORT);
+		service = Executors.newFixedThreadPool(1);
 	}
 
 
@@ -55,17 +64,32 @@ public class MineWeb extends JavaPlugin {
 	public void onDisable() {
 		super.onDisable();
 		server.stop();
+
+		if (future != null && !future.isDone()) {
+			future.cancel(true);
+		}
 	}
 
 	@Override
 	public void onEnable() {
 		super.onEnable();
-		server.start();
+		if (future == null || future.isDone()) {
+			future = service.submit(new ServerService());
+		}
 	}
 
 	// ===========================================================
 	// Other methods
 	// ===========================================================
+	
+	class ServerService implements Runnable {
+
+		@Override
+		public void run() {
+			server.start();
+		}
+		
+	}
 
 	// ===========================================================
 	// Inner classes

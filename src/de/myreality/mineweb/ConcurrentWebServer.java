@@ -18,6 +18,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Concurrent implementation of {@see WebServer}
@@ -67,19 +69,25 @@ public class ConcurrentWebServer implements WebServer {
 
 	@Override
 	public void start() {
+		
+		Logger l = plugin.getLogger();
+		l.log(Level.INFO, "Starting web service..");
 		if (!isRunning()) {
 			try {
-				socket = new ServerSocket(port);				
-				socket.setReuseAddress(true);
+				
+				socket = new ServerSocket(port);	
 				running = true;
 				
 				while (running) {
 					try {
+						l.log(Level.INFO, "Waiting for connection..");
 						Socket client = socket.accept();
 						ClientHandler handler = new ClientHandler(client, plugin);
+						l.log(Level.INFO, "New client submitted: " + client.getInetAddress());
 						service.submit(handler);
 					} catch (IOException e) {
 						e.printStackTrace();
+						l.log(Level.SEVERE, e.getMessage());
 					}
 				}
 			} catch (IOException e) {

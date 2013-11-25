@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Server;
@@ -43,7 +44,7 @@ public class JsonResponse {
 	public static final String PLAYERS = "players";
 
 	private static final String OUTPUT_HEADERS = "HTTP/1.1 200 OK\r\n"
-			+ "Content-Type: application/json\r\n" + "Content-Length: ";
+			+ "Content-Type: application/json; charset:utf-8\r\n" + "Content-Length: ";
 
 	private static final String OUTPUT_END_OF_HEADERS = "\r\n\r\n";
 
@@ -65,24 +66,33 @@ public class JsonResponse {
 
 	public void handle(Socket client, String request, MineWeb plugin)
 			throws IOException {
-
-		// Handle a query request.
-		if (request == null) {
-			return;
+		
+		try {
+			// Send the JSON response.
+			DataOutputStream out = new DataOutputStream(client.getOutputStream());
+			String json = createJson(plugin);
+			String bytes = OUTPUT_HEADERS + json.length() + OUTPUT_END_OF_HEADERS
+					+ json;
+			out.writeBytes(bytes);
+			out.flush();
+			out.close();
+			
+			plugin.getLogger().log(Level.INFO, "Wrote: " + bytes);
+		} catch (Exception e) {
+			plugin.getLogger().log(Level.INFO, e.getMessage());
 		}
-
-		// Send the JSON response.
-		DataOutputStream out = new DataOutputStream(client.getOutputStream());
-		String json = createJson(plugin);
-
-		out.writeBytes(OUTPUT_HEADERS + json.length() + OUTPUT_END_OF_HEADERS
-				+ json);
-		out.flush();
-		out.close();
 	}
 
 	private String jsonfy(String key, String value) {
-		return "\"" + key + "\":\"" + value + "\"";
+		return jsonfy(key, value, true);
+	}
+	
+	private String jsonfy(String key, String value, boolean stringed) {
+		if (stringed) {
+			return "\"" + key + "\":\"" + value + "\"";
+		} else {
+			return "\"" + key + "\":" + value;
+		}
 	}
 
 	private String createJson(MineWeb plugin) {
@@ -99,8 +109,8 @@ public class JsonResponse {
 		json.append(jsonfy(CURRENT_PLAYER_COUNT, current + "")).append(",");
 		json.append(jsonfy(MAX_PLAYER_COUNT, max + "")).append(",");
 		json.append(jsonfy(BUKKIT_VERSION, server.getBukkitVersion())).append(",");	
-		json.append(jsonfy(PLAYERS, createPlayersJson(getPlayers(server))));	
-		json.append("}\n");
+		json.append(jsonfy(PLAYERS, createPlayersJson(getPlayers(server)), false));
+		json.append("}");
 		
 		return json.toString();			
 	}
@@ -114,13 +124,16 @@ public class JsonResponse {
 		for (OfflinePlayer player : players) {
 			if (player instanceof Player) {
 				json.append(createPlayerJson((Player)player)).append(",");
-			} else {
+			} else if (!player.isOnline()) {
 				json.append(createPlayerJson(player)).append(",");
 			}
 		}
 		
 		// Remove the last comma
-		json.deleteCharAt(json.lastIndexOf(","));
+		int index = json.lastIndexOf(",");
+		if (index > -1) {
+			json.deleteCharAt(index);
+		}
 		
 		json.append("]");
 		
@@ -177,7 +190,9 @@ public class JsonResponse {
 		}
 		
 		for (OfflinePlayer p : offline) {
-			players.add(p);
+			if (!players.contains(p) && !p.isOnline()) {
+				players.add(p);
+			}
 		}
 		
 		return players;
