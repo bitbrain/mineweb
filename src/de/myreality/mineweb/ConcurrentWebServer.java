@@ -55,7 +55,7 @@ public class ConcurrentWebServer implements WebServer {
 	public ConcurrentWebServer(MineWeb plugin, int port) {
 		this.plugin = plugin;
 		this.port = port;
-		service = Executors.newFixedThreadPool(5);
+		service = Executors.newFixedThreadPool(1);
 	}
 
 	// ===========================================================
@@ -71,28 +71,27 @@ public class ConcurrentWebServer implements WebServer {
 	public void start() {
 		
 		Logger l = plugin.getLogger();
-		l.log(Level.INFO, "Starting web service..");
-		if (!isRunning()) {
-			try {
-				
+		try {
+			
+			if (socket == null) {
 				socket = new ServerSocket(port);	
 				running = true;
-				
-				while (running) {
-					try {
-						l.log(Level.INFO, "Waiting for connection..");
-						Socket client = socket.accept();
-						ClientHandler handler = new ClientHandler(client, plugin);
-						l.log(Level.INFO, "New client submitted: " + client.getInetAddress());
-						service.submit(handler);
-					} catch (IOException e) {
-						e.printStackTrace();
-						l.log(Level.SEVERE, e.getMessage());
-					}
-				}
-			} catch (IOException e) {
-				e.printStackTrace();
 			}
+			
+			if (running) {
+				try {
+					l.log(Level.INFO, "Waiting for connection..");
+					Socket client = socket.accept();
+					ClientHandler handler = new ClientHandler(client, plugin);
+					l.log(Level.INFO, "New client submitted: " + client.getInetAddress());
+					service.submit(handler);
+				} catch (IOException e) {
+					e.printStackTrace();
+					l.log(Level.SEVERE, e.getMessage());
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 

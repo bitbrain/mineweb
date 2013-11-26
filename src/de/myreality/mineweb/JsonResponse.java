@@ -167,7 +167,6 @@ public class JsonResponse {
 		json.append(jsonfy("name", player.getDisplayName())).append(",");
 		json.append(jsonfy("dead", player.isDead() + "")).append(",");
 		json.append(jsonfy("xp", player.getExp() + "")).append(",");
-		json.append(jsonfy("xpMax", player.getTotalExperience() + "")).append(",");
 		json.append(jsonfy("health", player.getHealth() + "")).append(",");
 		json.append(jsonfy("healthMax", player.getMaxHealth() + "")).append(",");
 		json.append(jsonfy("level", player.getLevel() + "")).append(",");

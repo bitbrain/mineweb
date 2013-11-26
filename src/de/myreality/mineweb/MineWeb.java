@@ -13,9 +13,10 @@
  */
 package de.myreality.mineweb;
 
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -41,7 +42,7 @@ public class MineWeb extends JavaPlugin {
 	
 	private WebServer server;
 	
-	private ExecutorService service;
+	private ScheduledExecutorService service;
 	
 	private Future<?> future;
 
@@ -51,7 +52,7 @@ public class MineWeb extends JavaPlugin {
 	
 	public MineWeb() {
 		this.server = new ConcurrentWebServer(this, DEFAULT_PORT);
-		service = Executors.newFixedThreadPool(1);
+		service = Executors.newScheduledThreadPool(5);
 	}
 
 
@@ -74,7 +75,7 @@ public class MineWeb extends JavaPlugin {
 	public void onEnable() {
 		super.onEnable();
 		if (future == null || future.isDone()) {
-			future = service.submit(new ServerService());
+			future = service.scheduleWithFixedDelay(new ServerService(), 0, 500, TimeUnit.MILLISECONDS);
 		}
 	}
 
